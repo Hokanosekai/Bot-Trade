@@ -1,0 +1,117 @@
+//+------------------------------------------------------------------+
+//|                                                      Version 1.0 |
+//|                                                   by Hokanosekai |
+//| Change log :                                                     |
+//|   - Add RSI calculator                                           |
+//|   - Add Bollinger Bands Calculator                               |
+//|   - Open Positions Conditions                                    |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Importation de librarie pour ouvrir un trade                     |
+//+------------------------------------------------------------------+
+
+#include<Trade\Trade.mqh>;
+CTrade trade;
+
+//+------------------------------------------------------------------+
+//| Definition des variables                                         |
+//+------------------------------------------------------------------+
+
+void OnTick()
+  {
+      
+      //+------------------------------------------------------------------+
+      //| VAriables                                                        |
+      //+------------------------------------------------------------------+
+  
+      string entry = "";
+  
+      //+------------------------------------------------------------------+
+      //| Demande et Offre                                                 |
+      //+------------------------------------------------------------------+
+      
+      double Ask =NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_ASK),_Digits);
+      double Bid =NormalizeDouble(SymbolInfoDouble(_Symbol,SYMBOL_BID),_Digits);
+      
+      //+------------------------------------------------------------------+
+      //| Definition du RSI                                                |
+      //+------------------------------------------------------------------+
+      
+      double RSIArray[];
+      int RSIDefinition = iRSI(_Symbol,PERIOD_M5,14,PRICE_CLOSE);
+      CopyBuffer(RSIDefinition,0,0,3,RSIArray);
+      double RSIValue = NormalizeDouble(RSIArray[0],2);
+      
+      //+------------------------------------------------------------------+
+      //| Definition du Band Bollinger                                     |
+      //+------------------------------------------------------------------+
+      
+      MqlRates PriceInfo[];
+      ArraySetAsSeries(PriceInfo,true);
+      int PriceData = CopyRates(Symbol(),Period(),0,3,PriceInfo);
+      
+      double UpperBandArray[];
+      double LowerBandArray[];
+      double MiddleBandArray[];
+      
+      ArraySetAsSeries(UpperBandArray,true);
+      ArraySetAsSeries(LowerBandArray,true);
+      ArraySetAsSeries(MiddleBandArray,true);
+      
+      int BollingerBandDef = iBands(_Symbol,_Period,20,0,2,PRICE_CLOSE);
+      
+      CopyBuffer(BollingerBandDef,1,0,3,UpperBandArray);
+      CopyBuffer(BollingerBandDef,2,0,3,LowerBandArray);
+      CopyBuffer(BollingerBandDef,0,0,3,MiddleBandArray);
+      
+      double UpperBandValue = UpperBandArray[0];
+      double LowerBandValue = LowerBandArray[0];
+      double MiddleBandValue = MiddleBandArray[0];
+      
+      double LastUpperBandValue = UpperBandArray[1];
+      double LastLowerBandValue = LowerBandArray[1];
+      double LastMiddleBandValue = MiddleBandArray[1];
+      
+      //+------------------------------------------------------------------+
+      //| Conditions Ouvertures Positions                                  |
+      //+------------------------------------------------------------------+
+      
+      if(
+            (RSIValue <= 30)
+            && (PriceInfo[0].close < LowerBandValue)
+        )
+        {
+            entry = "buy";
+        }
+      if(
+            (RSIValue >= 70)
+            && (PriceInfo[0].close > UpperBandValue)
+        )
+        {
+            entry = "sell";
+        }
+        
+      if(entry == "sell" && PositionsTotal() < 1)
+         {
+            double sl = Bid + 7*_Point;
+            double tp = MiddleBandValue;
+            trade.Sell(0.10,NULL,Bid,sl,tp,NULL);
+         }
+      
+     
+      if(entry == "buy" && PositionsTotal() < 1)
+         {
+            double sl = Ask - 7*_Point;
+            double tp = MiddleBandValue;
+            trade.Buy(0.10,NULL,Ask,sl,tp,NULL);
+         }
+         
+      Comment(
+               " Position : ",entry,
+               "\n RSI : ",RSIValue,
+               "\n BBUP : ",UpperBandValue,
+               "\n BBLOW : ",LowerBandValue,
+               "\n BBM : ",MiddleBandValue
+             );
+  }

@@ -1,0 +1,268 @@
+//+------------------------------------------------------------------+
+//| Importation de librarie pour ouvrir un trade                     |
+//+------------------------------------------------------------------+
+
+#include<Trade\Trade.mqh>;
+CTrade trade;
+
+//+------------------------------------------------------------------+
+//| Definition des variables                                         |
+//+------------------------------------------------------------------+
+
+datetime OpenHours[] = {"08:00","08:30","08:45","08:55","09:00","09:30","09:45","09:55","10:00","10:30","10:45","10:55"};
+datetime CloseHours[] = {"09:00","10:00","11:00"};
+
+string StrOpenHours[] = {"08:00","08:30","08:45","08:55","09:00","09:30","09:45","09:55","10:00","10:30","10:45","10:55"};
+string StrCloseHours[] = {"09:00","10:00","11:00"};
+
+double OpenCandle[12];
+double CloseCandle[3];
+
+string Position = "Neutre";
+
+input string StartTradingTime = "8:00";
+input string StopTradingTime = "12:00";
+
+bool TradeAllowed = false;
+
+string CurrentTime;
+
+void OnTick()
+  { 
+  
+      //+------------------------------------------------------------------+
+      //| Toutes les periodes                                              |
+      //+------------------------------------------------------------------+
+      
+      ENUM_TIMEFRAMES AllPeriod[4];
+      AllPeriod[0] = PERIOD_H1;
+      AllPeriod[1] = PERIOD_M30;
+      AllPeriod[2] = PERIOD_M15;
+      AllPeriod[3] = PERIOD_M5;
+      
+      //+------------------------------------------------------------------+
+      //| Definition des heures                                            |
+      //+------------------------------------------------------------------+
+      
+      datetime time = TimeLocal();
+      string Day = TimeToString(time,TIME_DATE);
+      string HoursMinutes = TimeToString(time,TIME_MINUTES);   
+      CurrentTime = TimeToString(time,TIME_MINUTES);
+        
+      //+------------------------------------------------------------------+
+      //| Recuperation des Bougie aux heures precise                       |
+      //+------------------------------------------------------------------+
+        
+      for(int i=0;i<ArraySize(OpenHours);i++)
+        {
+            if(HoursMinutes == StrOpenHours[i])
+              {
+                  OpenCandle[i] = iOpen(_Symbol,AllPeriod[i%3],
+                                          iBarShift(_Symbol,AllPeriod[i%3],Day + StringSubstr(OpenHours[i],10,6))
+                                       );
+              }
+        }
+
+      //+------------------------------------------------------------------+
+      //| Recuperation de la bougie de cloture                             |
+      //+------------------------------------------------------------------+
+      
+      for(int i=0;i<ArraySize(CloseHours);i++)
+        {
+            if(HoursMinutes == StrCloseHours[i])
+              {
+                  CloseCandle[i] = iClose(_Symbol,PERIOD_H1,
+                                            iBarShift(_Symbol,PERIOD_H1,Day + StringSubstr(CloseHours[i],10,6))
+                                         );
+              }
+        }
+
+      //+------------------------------------------------------------------+
+      //| Definition de la bougie la plus basse pour le SL                 |
+      //+------------------------------------------------------------------+
+      
+      MqlRates PriceInfoLC[];
+      ArraySetAsSeries(PriceInfoLC,true);
+      int Data = CopyRates(_Symbol,_Period,0,100,PriceInfoLC);
+      int LowestCandle;
+      double Low[];
+      ArraySetAsSeries(Low,true);
+      CopyLow(_Symbol,_Period,0,100,Low);
+      LowestCandle = ArrayMinimum(Low,0,100);
+      
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //| Conditions de Trade                                              |
+      //|                                                                  |
+      //+------------------------------------------------------------------+
+      
+      if (CheckTradingTime() == true)
+      if (PositionsTotal() == 0)
+
+      //+------------------------------------------------------------------+
+      //| Position Acheteuse                                               |
+      //+------------------------------------------------------------------+    
+        
+//      for(int i=0;i<ArraySize(OpenCandle);i++)
+//        {
+//         
+//            if(OpenCandle[i%3] > CloseCandle[i%4])
+//              {
+//                  if(OpenCandle[i%3] > CloseCandle[i%4])
+//                    {
+//                        if(OpenCandle[i%3] > CloseCandle[i%4])
+//                          {
+//                              if(OpenCandle[i%3] > CloseCandle[i%4])
+//                                {
+//                                    Position = "Acheteuse";
+//                                }
+//                          }
+//                    }
+//              }
+//         
+//        }
+
+
+      if(OpenCandle[0] > CloseCandle[0])
+           {
+               if(OpenCandle[1] > CloseCandle[0])
+                 {
+                     if(OpenCandle[2] > CloseCandle[0])
+                       {
+                           if(OpenCandle[3] > CloseCandle[0])
+                             {
+                                 Position = "Acheteuse 8h - 9h";
+                                 trade.Buy(0.10,NULL,OpenCandle[3],OpenCandle[3]-100*_Point,OpenCandle[3]+150*_Point,NULL);
+                             }
+                       }
+                 }
+           }
+           
+      if(OpenCandle[4] > CloseCandle[1])
+           {
+               if(OpenCandle[5] > CloseCandle[1])
+                 {
+                     if(OpenCandle[6] > CloseCandle[1])
+                       {
+                           if(OpenCandle[7] > CloseCandle[1])
+                             {
+                                 Position = "Acheteuse 9h - 10h";
+                                 trade.Buy(0.10,NULL,OpenCandle[3],OpenCandle[3]-100*_Point,OpenCandle[3]+150*_Point,NULL);
+                             }
+                       }
+                 }
+           }
+           
+       if(OpenCandle[8] > CloseCandle[2])
+           {
+               if(OpenCandle[9] > CloseCandle[2])
+                 {
+                     if(OpenCandle[10] > CloseCandle[2])
+                       {
+                           if(OpenCandle[11] > CloseCandle[2])
+                             {
+                                 Position = "Acheteuse 10h - 11h";
+                                 trade.Buy(0.10,NULL,OpenCandle[3],OpenCandle[3]-100*_Point,OpenCandle[3]+150*_Point,NULL);
+                             }
+                       }
+                 }
+           }
+           
+      //+------------------------------------------------------------------+
+      //| Position Vendeuse                                                |
+      //+------------------------------------------------------------------+
+      
+      if(OpenCandle[0] < CloseCandle[0])
+           {
+               if(OpenCandle[1] < CloseCandle[0])
+                 {
+                     if(OpenCandle[2] < CloseCandle[0])
+                       {
+                           if(OpenCandle[3] < CloseCandle[0])
+                             {
+                                 Position = "Vendeuse 8h - 9h";
+                                 trade.Sell(0.10,NULL,OpenCandle[3],OpenCandle[3]-100*_Point,OpenCandle[3]+150*_Point,NULL);
+                             }
+                       }
+                 }
+           }
+           
+      if(OpenCandle[4] < CloseCandle[1])
+           {
+               if(OpenCandle[5] < CloseCandle[1])
+                 {
+                     if(OpenCandle[6] < CloseCandle[1])
+                       {
+                           if(OpenCandle[7] < CloseCandle[1])
+                             {
+                                 Position = "Vendeuse 9h - 10h";
+                                 trade.Sell(0.10,NULL,OpenCandle[3],OpenCandle[3]-100*_Point,OpenCandle[3]+150*_Point,NULL);
+                             }
+                       }
+                 }
+           }
+           
+       if(OpenCandle[8] < CloseCandle[2])
+           {
+               if(OpenCandle[9] < CloseCandle[2])
+                 {
+                     if(OpenCandle[10] < CloseCandle[2])
+                       {
+                           if(OpenCandle[11] < CloseCandle[2])
+                             {
+                                 Position = "Vendeuse 10h - 11h";
+                                 trade.Sell(0.10,NULL,OpenCandle[3],OpenCandle[3]-100*_Point,OpenCandle[3]+150*_Point,NULL);
+                             }
+                       }
+                 }
+           }
+      
+      //+------------------------------------------------------------------+
+      //| Affichage des données recuperer                                  |
+      //+------------------------------------------------------------------+
+      
+      Comment(
+         " ",Day," ",HoursMinutes," : ",StrOpenHours[0],
+         "\n",
+         "\n",StringSubstr(OpenHours[0],10,6)," : ",OpenCandle[0],
+         "\n",StringSubstr(OpenHours[1],10,6)," : ",OpenCandle[1],
+         "\n",StringSubstr(OpenHours[2],10,6)," : ",OpenCandle[2],
+         "\n",StringSubstr(OpenHours[3],10,6)," : ",OpenCandle[3],
+         "\n",StringSubstr(OpenHours[8],10,6)," : ",OpenCandle[8],
+         "\n",StringSubstr(OpenHours[9],10,6)," : ",OpenCandle[9],
+         "\n",StringSubstr(OpenHours[10],10,6)," : ",OpenCandle[10],
+         "\n",StringSubstr(OpenHours[11],10,6)," : ",OpenCandle[11],
+         "\n",
+         "\n",StringSubstr(CloseHours[0],10,6)," : ",CloseCandle[0],
+         "\n",StringSubstr(CloseHours[1],10,6)," : ",CloseCandle[1],
+         "\n",StringSubstr(CloseHours[2],10,6)," : ",CloseCandle[2],
+         "\n",
+         "\n",Position
+      );   
+ 
+      //+------------------------------------------------------------------+
+      //| Affichage de la bougie la plus basse                             |
+      //+------------------------------------------------------------------+
+      
+      ObjectCreate(_Symbol,"Line1",OBJ_HLINE,0,0,PriceInfoLC[LowestCandle].low);
+      ObjectSetInteger(0,"Line1",OBJPROP_COLOR,clrBlue);
+      ObjectSetInteger(0,"Line1",OBJPROP_WIDTH,2);
+      ObjectMove(_Symbol,"Line1",0,0,PriceInfoLC[LowestCandle].low);
+  }
+  
+  
+//+------------------------------------------------------------------+
+//| Fonctions externes                                               |
+//+------------------------------------------------------------------+
+  
+bool CheckTradingTime()
+   {
+      if (StringSubstr(CurrentTime,0,5) == StartTradingTime)
+      TradeAllowed == true;
+      
+      if (StringSubstr(CurrentTime,0,5) == StopTradingTime)
+      TradeAllowed == false;
+      
+      return TradeAllowed;
+   }
+   
